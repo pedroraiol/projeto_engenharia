@@ -1,5 +1,6 @@
 import pygame
 import random
+import difflib  # Para tolerância a erros de digitação
 
 # Inicializar o Pygame
 pygame.init()
@@ -31,28 +32,49 @@ words = {
 word_list = list(words.items())
 random.shuffle(word_list)
 
-# Função para exibir texto na tela
 def draw_text(text, font, color, x, y, center=True):
     render = font.render(text, True, color)
     text_rect = render.get_rect(center=(x, y)) if center else (x, y)
     screen.blit(render, text_rect)
 
-# Tela de parabéns
-def congrats_screen():
-    screen.fill(BRANCO)
-    draw_text("Parabéns! Você completou o jogo!", BIG_FONT, VERDE, WIDTH // 2, HEIGHT // 3)
-    draw_text("Pressione ESC para sair", FONT, PRETO, WIDTH // 2, HEIGHT // 2)
-    pygame.display.flip()
-    waiting = True
-    while waiting:
+def draw_button(text, x, y, w, h, color, action=None):
+    pygame.draw.rect(screen, color, (x, y, w, h), border_radius=10)
+    draw_text(text, FONT, BRANCO, x + w // 2, y + h // 2)
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    if x < mouse[0] < x + w and y < mouse[1] < y + h:
+        if click[0] == 1 and action:
+            action()
+
+# Tela inicial
+def start_screen():
+    while True:
+        screen.fill(AZUL)
+        draw_text("Jogo de Inglês", BIG_FONT, BRANCO, WIDTH // 2, HEIGHT // 3)
+        draw_button("Iniciar Jogo", WIDTH // 2 - 100, HEIGHT // 2, 200, 50, VERDE, main)
+        pygame.display.flip()
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    exit()
+
+# Função para verificar se a resposta do usuário é aceitável
+def is_close_match(user_input, correct_answer):
+    return difflib.SequenceMatcher(None, user_input.lower(), correct_answer.lower()).ratio() > 0.8
+
+# Tela de feedback após cada resposta
+def feedback_screen(correct, correct_answer=""):
+    screen.fill(VERDE if correct else VERMELHO)
+    draw_text("Correto!" if correct else "Incorreto!", BIG_FONT, BRANCO, WIDTH // 2, HEIGHT // 2 - 50)
+    if not correct:
+        draw_text(f"A resposta era: {correct_answer}", FONT, BRANCO, WIDTH // 2, HEIGHT // 2 + 10)
+        draw_text("Reveja esta palavra!", FONT, BRANCO, WIDTH // 2, HEIGHT // 2 + 50)
+    pygame.display.flip()
+    pygame.time.wait(1000)  # Espera 1 segundo antes de continuar
+    
+    if not correct:
+        start_screen()
 
 # Função principal do jogo
 def main():
@@ -63,50 +85,42 @@ def main():
     user_input = ""
 
     while running:
-        if score >= 10:
-            congrats_screen()
-            break
-
         screen.fill(BRANCO)
-        pygame.draw.rect(screen, CINZA, (WIDTH // 2 - 160, HEIGHT // 2 + 40, 320, 60), border_radius=10)
+        draw_button("Tela Inicial", 10, 10, 150, 40, CINZA, start_screen)
 
         if index < len(word_list):
             english_word, translation = word_list[index]
         else:
-            congrats_screen()
-            running = False
-            break
+            start_screen()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
-                    if user_input.lower() == translation:
+                    correct = is_close_match(user_input, translation)
+                    if correct:
                         score += 1
-                        draw_text("Correto!", FONT, VERDE, WIDTH // 2, HEIGHT // 2 + 120)
                     else:
-                        draw_text("Errado! A resposta era: " + translation, FONT, VERMELHO, WIDTH // 2, HEIGHT // 2 + 120)
-                    pygame.display.CINZA()
-                    pygame.time.wait(700)
+                        score = 0  # Zera o score ao errar
+                    feedback_screen(correct, translation)
                     index += 1
                     user_input = ""
                 elif event.key == pygame.K_BACKSPACE:
                     user_input = user_input[:-1]
                 elif event.key == pygame.K_ESCAPE:
-                    running = False
+                    start_screen()
                 else:
                     user_input += event.unicode
 
         draw_text(f"Pontuação: {score}", FONT, PRETO, WIDTH // 2, 50)
         draw_text("Traduza esta palavra:", FONT, PRETO, WIDTH // 2, HEIGHT // 2 - 100)
         draw_text(english_word, BIG_FONT, AZUL, WIDTH // 2, HEIGHT // 2 - 40)
+        pygame.draw.rect(screen, CINZA, (WIDTH // 2 - 160, HEIGHT // 2 + 40, 320, 60), border_radius=10)
         draw_text(user_input, FONT, PRETO, WIDTH // 2, HEIGHT // 2 + 70)
-
         pygame.display.flip()
         clock.tick(30)
 
-    pygame.quit()
-
 if __name__ == "__main__":
-    main()
+    start_screen()
