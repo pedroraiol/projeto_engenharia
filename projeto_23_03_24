@@ -1,0 +1,185 @@
+import pygame
+import random
+
+# Inicializar o Pygame
+pygame.init()
+
+# Configurações da tela
+WIDTH, HEIGHT = 1000, 800
+tela = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Polygame")
+
+# Cores
+BRANCO = (240, 248, 255)
+PRETO = (0, 0, 0)
+AZUL = (70, 130, 180)
+VERDE = (34, 139, 34)
+VERMELHO = (220, 20, 60)
+CINZA = (200, 200, 200)
+
+# Fonte
+FONTE = pygame.font.Font(pygame.font.match_font('impact'), 32)
+FONTE_PRINCIPAL = pygame.font.Font(pygame.font.match_font('impact'), 48)
+
+# Banco de palavras
+palavras = {
+    "apple": "maçã", "dog": "cachorro", "house": "casa", "book": "livro", "sun": "sol",
+    "car": "carro", "tree": "árvore", "water": "água", "moon": "lua", "computer": "computador",
+    "chair": "cadeira", "table": "mesa", "phone": "telefone", "window": "janela", "door": "porta"
+}
+
+lista_palavras = list(palavras.items())
+random.shuffle(lista_palavras)
+
+# Carregar imagens
+fundo = pygame.image.load("/home/pedroraiol/Downloads/fundo.png")
+
+# Variáveis globais
+pontuacao = 0  # Contador de acertos
+index = 0  # Índice da palavra atual
+alternativas = []  # Lista para armazenar as alternativas da palavra atual
+
+# Função para exibir texto na tela
+def exibir_texto(text, font, color, x, y, center=True):
+    render = font.render(text, True, color)
+    text_rect = render.get_rect(center=(x, y)) if center else (x, y)
+    tela.blit(render, text_rect)
+    
+# Função para exibir botões na tela
+def exibir_botao(text, x, y, w, h, color, action=None):
+    pygame.draw.rect(tela, color, (x, y, w, h), border_radius=10)
+    exibir_texto(text, FONTE, BRANCO, x + w // 2, y + h // 2)
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    if x < mouse[0] < x + w and y < mouse[1] < y + h:
+        if click[0] == 1 and action:
+            action()
+
+# Tela inicial
+def tela_inicial():
+    waiting = True
+    while waiting:
+        tela.fill(BRANCO)
+        exibir_texto("Bem-vindo ao PolyGame!", FONTE_PRINCIPAL, AZUL, WIDTH // 2, HEIGHT // 3)
+        
+        # Botão centralizado exatamente no meio da tela
+        botao_largura, botao_altura = 525, 50
+        botao_x = (WIDTH - botao_largura) // 2
+        botao_y = (HEIGHT - botao_altura) // 2
+        exibir_botao("Clique aqui ou pressione ENTER para começar", botao_x, botao_y, botao_largura, botao_altura, AZUL)
+        
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    waiting = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if (botao_x < mouse_pos[0] < botao_x + botao_largura and
+                    botao_y < mouse_pos[1] < botao_y + botao_altura):
+                    waiting = False
+
+# Tela de parabéns
+def tela_parabens():
+    tela.fill(BRANCO)
+    exibir_texto("Parabéns! Você completou o jogo!", FONTE_PRINCIPAL, VERDE, WIDTH // 2, HEIGHT // 2 - 50)
+    exibir_texto("Pressione ESC para sair", FONTE, PRETO, WIDTH // 2, HEIGHT // 2 + 50)
+    pygame.display.update()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
+
+# Tela de feedback após cada resposta
+def tela_feedback(correct, correct_answer=""):
+    tela.fill(VERDE if correct else VERMELHO)
+    exibir_texto("Correto!" if correct else "Errado!", FONTE_PRINCIPAL, BRANCO, WIDTH // 2, HEIGHT // 2 - 20)
+    if not correct:
+        exibir_texto(f"A resposta correta era: {correct_answer}", FONTE, BRANCO, WIDTH // 2, HEIGHT // 2 + 10)
+    pygame.display.flip()
+    pygame.time.wait(1000)  # Espera 1 segundo antes de continuar
+        
+# Função para verificar a resposta
+def verificar_resposta(resposta, correct_translation):
+    global pontuacao, index, alternativas
+    if resposta == correct_translation:
+        tela_feedback(True)
+        pontuacao += 1
+    else:
+        tela_feedback(False, correct_translation)
+    index += 1  # Avança para a próxima palavra
+    alternativas = []  # Reseta as alternativas para a próxima palavra
+
+# Função principal do jogo
+def main():    
+    global pontuacao, index, alternativas
+    clock = pygame.time.Clock()
+    running = True
+
+    tela_inicial()  # Exibir tela inicial antes do jogo começar
+    
+    while running:
+        if pontuacao >= 10:
+            tela_parabens()
+            break
+
+        tela.fill(BRANCO)
+        if index < len(lista_palavras):
+            english_word, correct_translation = lista_palavras[index]
+            
+            # Gerar alternativas apenas uma vez por palavra
+            if not alternativas:
+                alternativas = [correct_translation]
+                while len(alternativas) < 4:
+                    palavra_aleatoria = random.choice(list(palavras.values()))
+                    if palavra_aleatoria not in alternativas:
+                        alternativas.append(palavra_aleatoria)
+                random.shuffle(alternativas)  # Embaralhar as alternativas
+        else:
+            tela_parabens()
+            running = False
+            break
+
+        # Exibir a pontuação no canto superior direito
+        exibir_texto(f"Pontuação: {pontuacao}", FONTE, PRETO, WIDTH - 100, 50)
+
+        # Exibir a palavra em inglês
+        exibir_texto(f"Traduza a palavra:", FONTE, PRETO, WIDTH // 2, HEIGHT // 2 - 150)
+        exibir_texto(english_word, FONTE_PRINCIPAL, AZUL, WIDTH // 2, HEIGHT // 2 - 100)
+
+        # Exibir as alternativas de resposta
+        botao_largura, botao_altura = 200, 50
+        espacamento = 20
+        for i, alternativa in enumerate(alternativas):
+            botao_x = (WIDTH - botao_largura * 2 - espacamento) // 2 + (i % 2) * (botao_largura + espacamento)
+            botao_y = (HEIGHT - botao_altura * 2 - espacamento) // 2 + (i // 2) * (botao_altura + espacamento)
+            exibir_botao(alternativa, botao_x, botao_y, botao_largura, botao_altura, VERDE, 
+                         action=lambda alt=alternativa: verificar_resposta(alt, correct_translation))
+
+        pygame.display.update()
+
+        # Verificar eventos
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+
+        clock.tick(30)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
