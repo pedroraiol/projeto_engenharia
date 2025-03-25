@@ -1,0 +1,363 @@
+import pygame 
+import random
+import math
+from functools import partial
+
+# Inicializar o Pygame
+pygame.init()
+
+# Configurações da tela
+WIDTH, HEIGHT = 1024, 1024
+tela = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Polygame")
+
+# Cores
+BRANCO = (240, 248, 255)
+PRETO = (0, 0, 0)
+AZUL = (70, 130, 180)
+AZUL_ESCURO = (0, 0, 139)
+VERDE = (34, 139, 34)
+VERMELHO = (220, 20, 60)
+CINZA = (200, 200, 200)
+AMARELO = (255, 255, 0)
+COR_FUNDO_COLORIDA = (255, 255, 255)
+COR_FUNDO_PB = (0, 0, 0)
+cores_botoes = [VERDE, AZUL, BRANCO, PRETO, VERMELHO]
+
+# Fontes
+try:
+    imagem_inicio = pygame.image.load("tela_de_fundo.png")
+    imagem_inicio = pygame.transform.scale(imagem_inicio, (1024, 1024))
+    print("Imagem carregada com sucesso")
+    
+    FONTE = pygame.font.Font(pygame.font.match_font('impact'), 32)
+    if not FONTE:
+        FONTE = pygame.font.Font(None, 32)
+
+    FONTE_PRINCIPAL = pygame.font.Font(pygame.font.match_font('impact'), 48)
+    if not FONTE_PRINCIPAL:
+        FONTE_PRINCIPAL = pygame.font.Font(None, 48)
+except pygame.error as e:
+    print(f"Erro ao carregar a fonte: {e}")
+    print(f"Erro ao carregar imagem de início: {e}")
+    imagem_inicio = None
+    pygame.quit()
+    exit()
+
+# Banco de palavras
+palavras = {
+    "apple": "maçã", "dog": "cachorro", "house": "casa", "book": "livro", "sun": "sol",
+    "car": "carro", "tree": "árvore", "water": "água", "moon": "lua", "computer": "computador",
+    "chair": "cadeira", "table": "mesa", "phone": "telefone", "window": "janela", "door": "porta"
+}
+
+lista_palavras = list(palavras.items())
+random.shuffle(lista_palavras)
+
+# Variáveis globais
+pontuacao = 0
+index = 0
+alternativas = []
+cor_botao_atual = VERDE
+fundo_jogo = BRANCO  
+fogos = []
+
+# Classe para partículas de fogos de artifício
+class Particula:
+    def __init__(self, x, y, cor):
+        self.x = x
+        self.y = y
+        self.cor = cor
+        self.raio = random.randint(2, 4)
+        self.angulo = random.uniform(0, math.pi * 2)
+        self.velocidade = random.uniform(2, 6)
+        self.tempo_vida = random.randint(20, 40)
+    
+    def update(self):
+        self.x += math.cos(self.angulo) * self.velocidade
+        self.y += math.sin(self.angulo) * self.velocidade
+        self.tempo_vida -= 1
+        self.raio = max(0, self.raio - 0.1)
+        return self.tempo_vida > 0
+    
+    def draw(self, tela):
+        pygame.draw.circle(tela, self.cor, (int(self.x), int(self.y)), int(self.raio))
+
+# Função para criar fogos de artifício
+def criar_fogos(x, y):
+    cores = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+    for _ in range(50):
+        cor = random.choice(cores)
+        fogos.append(Particula(x, y, cor))
+
+# Função para exibir texto na tela com fundo
+def exibir_texto_com_fundo(text, font, text_color, bg_color, x, y, padding=10):
+    text_surface = font.render(text, True, text_color)
+    text_width = text_surface.get_width()
+    text_height = text_surface.get_height()
+    
+    bg_rect = pygame.Rect(x - text_width//2 - padding, y - text_height//2 - padding, 
+                         text_width + padding*2, text_height + padding*2)
+    
+    pygame.draw.rect(tela, bg_color, bg_rect, border_radius=10)
+    pygame.draw.rect(tela, PRETO, bg_rect, 2, border_radius=10)
+    tela.blit(text_surface, (x - text_width//2, y - text_height//2))
+    return bg_rect
+
+# Função para exibir botões na tela
+def exibir_botao(text, x, y, w, h, color, hover_color, action=None):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    
+    is_hover = x < mouse[0] < x + w and y < mouse[1] < y + h
+    
+    button_color = hover_color if is_hover else color
+    
+    # Cria o retângulo do botão
+    button_rect = pygame.Rect(x, y, w, h)
+    pygame.draw.rect(tela, button_color, button_rect, border_radius=10)
+    pygame.draw.rect(tela, PRETO, button_rect, 3, border_radius=10)
+
+    text_surface = FONTE.render(text, True, BRANCO)
+    text_rect = text_surface.get_rect(center=button_rect.center)
+    tela.blit(text_surface, text_rect)
+
+    # Retorna o retângulo para detecção de colisão
+    return button_rect
+
+# Função para desenhar a barra de progresso
+def desenhar_barra_progresso():
+    progresso = pontuacao / 10
+    barra_width = 300
+    barra_height = 20
+    x = WIDTH // 2 - barra_width // 2
+    y = 30
+    
+    if pontuacao <= 4:
+        r = 255
+        g = int(255 * (pontuacao / 4))
+        b = 0
+    elif pontuacao <= 7:
+        r = int(255 * (1 - (pontuacao - 4) / 3))
+        g = 255
+        b = 0
+    else:
+        r = 0
+        g = 255
+        b = 0
+    
+    pygame.draw.rect(tela, CINZA, (x, y, barra_width, barra_height), border_radius=10)
+    pygame.draw.rect(tela, (r, g, b), (x, y, int(barra_width * progresso), barra_height), border_radius=10)
+    pygame.draw.rect(tela, PRETO, (x, y, barra_width, barra_height), 2, border_radius=10)
+    exibir_texto_com_fundo(f"Progresso: {pontuacao}/10", FONTE, PRETO, BRANCO, WIDTH // 2, y + barra_height + 30)
+
+# Tela de resposta errada
+def tela_resposta_errada(resposta_correta):
+    tela.fill(VERMELHO)
+    exibir_texto_com_fundo("Resposta errada!", FONTE_PRINCIPAL, BRANCO, VERMELHO, WIDTH // 2, HEIGHT // 2 - 50)
+    exibir_texto_com_fundo(f"A resposta correta era: {resposta_correta}", FONTE_PRINCIPAL, BRANCO, VERMELHO, WIDTH // 2, HEIGHT // 2 + 50)
+    pygame.display.update()
+    pygame.time.delay(1500)
+
+# Tela de resposta correta
+def tela_resposta_correta():
+    global fogos
+    fogos = []
+    criar_fogos(WIDTH // 2, HEIGHT // 3)
+    
+    clock = pygame.time.Clock()
+    start_time = pygame.time.get_ticks()
+    
+    while pygame.time.get_ticks() - start_time < 1500:
+        tela.fill(BRANCO)
+        
+        fogos = [fogo for fogo in fogos if fogo.update()]
+        for fogo in fogos:
+            fogo.draw(tela)
+        
+        exibir_texto_com_fundo("Parabéns! Resposta correta!", FONTE_PRINCIPAL, VERDE, BRANCO, WIDTH // 2, HEIGHT // 2)
+        
+        pygame.display.update()
+        clock.tick(30)
+
+# Função para verificar a resposta
+def verificar_resposta(resposta_selecionada, resposta_correta):
+    global pontuacao, index, alternativas
+    if resposta_selecionada == resposta_correta:
+        pontuacao += 1
+        tela_resposta_correta()
+    else:
+        tela_resposta_errada(resposta_correta)
+    alternativas = []
+    index += 1
+
+# Função para criar a tela inicial
+def tela_inicial():
+    esperando = True
+    
+    # Dimensões e posição do botão
+    LARGURA_BOTAO = 200
+    ALTURA_BOTAO = 50
+    POS_X = WIDTH // 2 - LARGURA_BOTAO // 2  # Centralizado horizontalmente
+    POS_Y = HEIGHT - 150  # 150 pixels do fundo
+    
+    while esperando:
+        tela.fill(BRANCO)
+        
+        if imagem_inicio:
+            # Desenha a imagem de fundo centralizada
+            img_x = (WIDTH - imagem_inicio.get_width()) // 2
+            img_y = (HEIGHT - imagem_inicio.get_height()) // 2
+            tela.blit(imagem_inicio, (img_x, img_y))
+            
+            # Texto do título
+            exibir_texto_com_fundo("Bem-vindo ao PolyGame!", FONTE_PRINCIPAL, 
+                                 AZUL_ESCURO, BRANCO, WIDTH // 2, 100)
+        
+        # Desenha o botão e obtém seu retângulo
+        rect_botao = exibir_botao("START", POS_X, POS_Y, 
+                                 LARGURA_BOTAO, ALTURA_BOTAO, AZUL, CINZA)
+
+        pygame.display.update()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                pos_mouse = pygame.mouse.get_pos()
+                if rect_botao.collidepoint(pos_mouse):
+                    esperando = False
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_RETURN:
+                    esperando = False
+
+# Tela de parabéns
+def tela_parabens():
+    global fogos
+    fogos = []
+    
+    # Criar fogos iniciais
+    for _ in range(5):
+        criar_fogos(random.randint(100, WIDTH-100), random.randint(100, HEIGHT//2))
+    
+    waiting = True
+    clock = pygame.time.Clock()
+    
+    while waiting:
+        tela.fill(BRANCO)
+        
+        # Atualizar e desenhar fogos
+        fogos = [fogo for fogo in fogos if fogo.update()]
+        for fogo in fogos:
+            fogo.draw(tela)
+        
+        # Adicionar novos fogos aleatoriamente
+        if random.random() < 0.05:
+            criar_fogos(random.randint(100, WIDTH-100), random.randint(100, HEIGHT//2))
+        
+        exibir_texto_com_fundo("Parabéns! Você completou o jogo!", FONTE_PRINCIPAL, VERDE, BRANCO, WIDTH // 2, HEIGHT // 3)
+        exibir_texto_com_fundo(f"Sua pontuação final é: {pontuacao}", FONTE_PRINCIPAL, AZUL, BRANCO, WIDTH // 2, HEIGHT // 2)
+
+        exibir_botao("Jogar Novamente", WIDTH // 2 - 150, HEIGHT // 2 + 100, 300, 50, AZUL, CINZA, action=recomeçar_jogo)
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    recomeçar_jogo()
+                    waiting = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if WIDTH // 2 - 150 < mouse_pos[0] < WIDTH // 2 + 150 and HEIGHT // 2 + 100 < mouse_pos[1] < HEIGHT // 2 + 150:
+                    recomeçar_jogo()
+                    waiting = False
+        
+        clock.tick(30)
+
+# Função para reiniciar o jogo
+def recomeçar_jogo():
+    global pontuacao, index, alternativas, fogos
+    pontuacao = 0
+    index = 0
+    alternativas = []
+    fogos = []
+    main()
+
+# Função principal do jogo
+def main():    
+    global pontuacao, index, alternativas, cor_botao_atual, fogos
+    clock = pygame.time.Clock()
+    running = True
+    atual_correto = ""
+
+    tela_inicial()
+
+    while running:
+        if pontuacao >= 10:
+            tela_parabens()
+            break
+
+        tela.fill(fundo_jogo)
+
+        if index >= len(lista_palavras):
+            random.shuffle(lista_palavras)
+            index = 0
+            
+        english_word, atual_correto = lista_palavras[index]
+
+        if not alternativas:
+            alternativas = [atual_correto]
+            while len(alternativas) < 4:
+                palavra_aleatoria = random.choice(list(palavras.values()))
+                if palavra_aleatoria not in alternativas:
+                    alternativas.append(palavra_aleatoria)
+            random.shuffle(alternativas)
+
+        desenhar_barra_progresso()
+        
+        espacamento_vertical = 60
+        exibir_texto_com_fundo("Traduza a palavra:", FONTE, PRETO, cor_botao_atual, WIDTH // 2, HEIGHT // 2 - 2*espacamento_vertical)
+        exibir_texto_com_fundo(english_word, FONTE_PRINCIPAL, PRETO, cor_botao_atual, WIDTH // 2, HEIGHT // 2 - espacamento_vertical//2)
+
+        botao_largura, botao_altura = 200, 50
+        espacamento_horizontal = 20
+        base_y = HEIGHT // 2 + espacamento_vertical//2
+        
+        # Lista para armazenar os retângulos dos botões
+        botoes_rect = []
+        
+        for i, alternativa in enumerate(alternativas):
+            botao_x = (WIDTH - botao_largura * 2 - espacamento_horizontal) // 2 + (i % 2) * (botao_largura + espacamento_horizontal)
+            botao_y = base_y + (i // 2) * (botao_altura + espacamento_horizontal)
+            
+            # Armazena o retângulo do botão
+            rect = exibir_botao(alternativa, botao_x, botao_y, botao_largura, botao_altura,
+                              cor_botao_atual, CINZA)
+            botoes_rect.append((rect, alternativa))
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                for rect, alternativa in botoes_rect:
+                    if rect.collidepoint(mouse_pos):
+                        verificar_resposta(alternativa, atual_correto)
+                        break
+
+        clock.tick(30)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()  
