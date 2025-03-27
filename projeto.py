@@ -1,6 +1,7 @@
 import pygame 
 import random
 import math
+import sys
 from functools import partial
 from datetime import datetime, timedelta
 
@@ -32,7 +33,8 @@ try:
     imagem_inicio = pygame.image.load("tela_de_fundo.png")
     imagem_inicio = pygame.transform.scale(imagem_inicio, (1024, 1024))
     print("Imagem carregada com sucesso")
-    
+    fundo_perguntas = pygame.image.load("fundo_perguntas.png").convert()
+    fundo_perguntas = pygame.transform.scale(fundo_perguntas, (WIDTH, HEIGHT))
     # Carregar imagem do troféu
     try:
         trofeu_img = pygame.image.load("trofeu.png").convert_alpha()
@@ -52,46 +54,117 @@ except pygame.error as e:
     print(f"Erro ao carregar imagem de início: {e}")
     imagem_inicio = None
     trofeu_img = None
+    fundo_perguntas = None
     pygame.quit()
     exit()
 
-# Banco de palavras por nível
+# Banco de palavras por nível e idioma
 palavras = {
-    "iniciante": {
-        "apple": {"traducao": "maçã", "caixa": 1, "proxima_revisao": datetime.now()},
-        "dog": {"traducao": "cachorro", "caixa": 1, "proxima_revisao": datetime.now()},
-        "house": {"traducao": "casa", "caixa": 1, "proxima_revisao": datetime.now()},
-        "book": {"traducao": "livro", "caixa": 1, "proxima_revisao": datetime.now()},
-        "sun": {"traducao": "sol", "caixa": 1, "proxima_revisao": datetime.now()},
-        "car": {"traducao": "carro", "caixa": 1, "proxima_revisao": datetime.now()},
-        "tree": {"traducao": "árvore", "caixa": 1, "proxima_revisao": datetime.now()},
-        "water": {"traducao": "água", "caixa": 1, "proxima_revisao": datetime.now()},
-        "moon": {"traducao": "lua", "caixa": 1, "proxima_revisao": datetime.now()},
-        "cat": {"traducao": "gato", "caixa": 1, "proxima_revisao": datetime.now()}
+    "inglês": {
+        "iniciante": {
+            "apple": {"traducao": "maçã", "caixa": 1, "proxima_revisao": datetime.now()},
+            "dog": {"traducao": "cachorro", "caixa": 1, "proxima_revisao": datetime.now()},
+            "house": {"traducao": "casa", "caixa": 1, "proxima_revisao": datetime.now()},
+            "book": {"traducao": "livro", "caixa": 1, "proxima_revisao": datetime.now()},
+            "sun": {"traducao": "sol", "caixa": 1, "proxima_revisao": datetime.now()},
+            "car": {"traducao": "carro", "caixa": 1, "proxima_revisao": datetime.now()},
+            "tree": {"traducao": "árvore", "caixa": 1, "proxima_revisao": datetime.now()},
+            "water": {"traducao": "água", "caixa": 1, "proxima_revisao": datetime.now()},
+            "moon": {"traducao": "lua", "caixa": 1, "proxima_revisao": datetime.now()},
+            "cat": {"traducao": "gato", "caixa": 1, "proxima_revisao": datetime.now()},
+            "flower": {"traducao": "flor", "caixa": 1, "proxima_revisao": datetime.now()},
+            "bird": {"traducao": "pássaro", "caixa": 1, "proxima_revisao": datetime.now()},
+            "fish": {"traducao": "peixe", "caixa": 1, "proxima_revisao": datetime.now()},
+            "hand": {"traducao": "mão", "caixa": 1, "proxima_revisao": datetime.now()},
+            "foot": {"traducao": "pé", "caixa": 1, "proxima_revisao": datetime.now()}
+        },
+        "intermediario": {
+            "computer": {"traducao": "computador", "caixa": 1, "proxima_revisao": datetime.now()},
+            "chair": {"traducao": "cadeira", "caixa": 1, "proxima_revisao": datetime.now()},
+            "table": {"traducao": "mesa", "caixa": 1, "proxima_revisao": datetime.now()},
+            "phone": {"traducao": "telefone", "caixa": 1, "proxima_revisao": datetime.now()},
+            "window": {"traducao": "janela", "caixa": 1, "proxima_revisao": datetime.now()},
+            "door": {"traducao": "porta", "caixa": 1, "proxima_revisao": datetime.now()},
+            "school": {"traducao": "escola", "caixa": 1, "proxima_revisao": datetime.now()},
+            "teacher": {"traducao": "professor", "caixa": 1, "proxima_revisao": datetime.now()},
+            "student": {"traducao": "estudante", "caixa": 1, "proxima_revisao": datetime.now()},
+            "country": {"traducao": "país", "caixa": 1, "proxima_revisao": datetime.now()},
+            "city": {"traducao": "cidade", "caixa": 1, "proxima_revisao": datetime.now()},
+            "hospital": {"traducao": "hospital", "caixa": 1, "proxima_revisao": datetime.now()},
+            "restaurant": {"traducao": "restaurante", "caixa": 1, "proxima_revisao": datetime.now()},
+            "supermarket": {"traducao": "supermercado", "caixa": 1, "proxima_revisao": datetime.now()},
+            "library": {"traducao": "biblioteca", "caixa": 1, "proxima_revisao": datetime.now()}
+        },
+        "avancado": {
+            "knowledge": {"traducao": "conhecimento", "caixa": 1, "proxima_revisao": datetime.now()},
+            "environment": {"traducao": "meio ambiente", "caixa": 1, "proxima_revisao": datetime.now()},
+            "government": {"traducao": "governo", "caixa": 1, "proxima_revisao": datetime.now()},
+            "technology": {"traducao": "tecnologia", "caixa": 1, "proxima_revisao": datetime.now()},
+            "population": {"traducao": "população", "caixa": 1, "proxima_revisao": datetime.now()},
+            "education": {"traducao": "educação", "caixa": 1, "proxima_revisao": datetime.now()},
+            "international": {"traducao": "internacional", "caixa": 1, "proxima_revisao": datetime.now()},
+            "communication": {"traducao": "comunicação", "caixa": 1, "proxima_revisao": datetime.now()},
+            "development": {"traducao": "desenvolvimento", "caixa": 1, "proxima_revisao": datetime.now()},
+            "responsibility": {"traducao": "responsabilidade", "caixa": 1, "proxima_revisao": datetime.now()},
+            "globalization": {"traducao": "globalização", "caixa": 1, "proxima_revisao": datetime.now()},
+            "sustainability": {"traducao": "sustentabilidade", "caixa": 1, "proxima_revisao": datetime.now()},
+            "innovation": {"traducao": "inovação", "caixa": 1, "proxima_revisao": datetime.now()},
+            "democracy": {"traducao": "democracia", "caixa": 1, "proxima_revisao": datetime.now()},
+            "revolution": {"traducao": "revolução", "caixa": 1, "proxima_revisao": datetime.now()}
+        }
     },
-    "intermediario": {
-        "computer": {"traducao": "computador", "caixa": 1, "proxima_revisao": datetime.now()},
-        "chair": {"traducao": "cadeira", "caixa": 1, "proxima_revisao": datetime.now()},
-        "table": {"traducao": "mesa", "caixa": 1, "proxima_revisao": datetime.now()},
-        "phone": {"traducao": "telefone", "caixa": 1, "proxima_revisao": datetime.now()},
-        "window": {"traducao": "janela", "caixa": 1, "proxima_revisao": datetime.now()},
-        "door": {"traducao": "porta", "caixa": 1, "proxima_revisao": datetime.now()},
-        "school": {"traducao": "escola", "caixa": 1, "proxima_revisao": datetime.now()},
-        "teacher": {"traducao": "professor", "caixa": 1, "proxima_revisao": datetime.now()},
-        "student": {"traducao": "estudante", "caixa": 1, "proxima_revisao": datetime.now()},
-        "country": {"traducao": "país", "caixa": 1, "proxima_revisao": datetime.now()}
-    },
-    "avancado": {
-        "knowledge": {"traducao": "conhecimento", "caixa": 1, "proxima_revisao": datetime.now()},
-        "environment": {"traducao": "meio ambiente", "caixa": 1, "proxima_revisao": datetime.now()},
-        "government": {"traducao": "governo", "caixa": 1, "proxima_revisao": datetime.now()},
-        "technology": {"traducao": "tecnologia", "caixa": 1, "proxima_revisao": datetime.now()},
-        "population": {"traducao": "população", "caixa": 1, "proxima_revisao": datetime.now()},
-        "education": {"traducao": "educação", "caixa": 1, "proxima_revisao": datetime.now()},
-        "international": {"traducao": "internacional", "caixa": 1, "proxima_revisao": datetime.now()},
-        "communication": {"traducao": "comunicação", "caixa": 1, "proxima_revisao": datetime.now()},
-        "development": {"traducao": "desenvolvimento", "caixa": 1, "proxima_revisao": datetime.now()},
-        "responsibility": {"traducao": "responsabilidade", "caixa": 1, "proxima_revisao": datetime.now()}
+    "russo": {
+        "iniciante": {
+            "яблоко": {"traducao": "maçã", "caixa": 1, "proxima_revisao": datetime.now()},
+            "собака": {"traducao": "cachorro", "caixa": 1, "proxima_revisao": datetime.now()},
+            "дом": {"traducao": "casa", "caixa": 1, "proxima_revisao": datetime.now()},
+            "книга": {"traducao": "livro", "caixa": 1, "proxima_revisao": datetime.now()},
+            "солнце": {"traducao": "sol", "caixa": 1, "proxima_revisao": datetime.now()},
+            "машина": {"traducao": "carro", "caixa": 1, "proxima_revisao": datetime.now()},
+            "дерево": {"traducao": "árvore", "caixa": 1, "proxima_revisao": datetime.now()},
+            "вода": {"traducao": "água", "caixa": 1, "proxima_revisao": datetime.now()},
+            "луна": {"traducao": "lua", "caixa": 1, "proxima_revisao": datetime.now()},
+            "кошка": {"traducao": "gato", "caixa": 1, "proxima_revisao": datetime.now()},
+            "цветок": {"traducao": "flor", "caixa": 1, "proxima_revisao": datetime.now()},
+            "птица": {"traducao": "pássaro", "caixa": 1, "proxima_revisao": datetime.now()},
+            "рыба": {"traducao": "peixe", "caixa": 1, "proxima_revisao": datetime.now()},
+            "рука": {"traducao": "mão", "caixa": 1, "proxima_revisao": datetime.now()},
+            "нога": {"traducao": "pé", "caixa": 1, "proxima_revisao": datetime.now()}
+        },
+        "intermediario": {
+            "компьютер": {"traducao": "computador", "caixa": 1, "proxima_revisao": datetime.now()},
+            "стул": {"traducao": "cadeira", "caixa": 1, "proxima_revisao": datetime.now()},
+            "стол": {"traducao": "mesa", "caixa": 1, "proxima_revisao": datetime.now()},
+            "телефон": {"traducao": "telefone", "caixa": 1, "proxima_revisao": datetime.now()},
+            "окно": {"traducao": "janela", "caixa": 1, "proxima_revisao": datetime.now()},
+            "дверь": {"traducao": "porta", "caixa": 1, "proxima_revisao": datetime.now()},
+            "школа": {"traducao": "escola", "caixa": 1, "proxima_revisao": datetime.now()},
+            "учитель": {"traducao": "professor", "caixa": 1, "proxima_revisao": datetime.now()},
+            "ученик": {"traducao": "estudante", "caixa": 1, "proxima_revisao": datetime.now()},
+            "страна": {"traducao": "país", "caixa": 1, "proxima_revisao": datetime.now()},
+            "город": {"traducao": "cidade", "caixa": 1, "proxima_revisao": datetime.now()},
+            "больница": {"traducao": "hospital", "caixa": 1, "proxima_revisao": datetime.now()},
+            "ресторан": {"traducao": "restaurante", "caixa": 1, "proxima_revisao": datetime.now()},
+            "супермаркет": {"traducao": "supermercado", "caixa": 1, "proxima_revisao": datetime.now()},
+            "библиотека": {"traducao": "biblioteca", "caixa": 1, "proxima_revisao": datetime.now()}
+        },
+        "avancado": {
+            "знание": {"traducao": "conhecimento", "caixa": 1, "proxima_revisao": datetime.now()},
+            "окружающая среда": {"traducao": "meio ambiente", "caixa": 1, "proxima_revisao": datetime.now()},
+            "правительство": {"traducao": "governo", "caixa": 1, "proxima_revisao": datetime.now()},
+            "технология": {"traducao": "tecnologia", "caixa": 1, "proxima_revisao": datetime.now()},
+            "население": {"traducao": "população", "caixa": 1, "proxima_revisao": datetime.now()},
+            "образование": {"traducao": "educação", "caixa": 1, "proxima_revisao": datetime.now()},
+            "международный": {"traducao": "internacional", "caixa": 1, "proxima_revisao": datetime.now()},
+            "общение": {"traducao": "comunicação", "caixa": 1, "proxima_revisao": datetime.now()},
+            "развитие": {"traducao": "desenvolvimento", "caixa": 1, "proxima_revisao": datetime.now()},
+            "ответственность": {"traducao": "responsabilidade", "caixa": 1, "proxima_revisao": datetime.now()},
+            "глобализация": {"traducao": "globalização", "caixa": 1, "proxima_revisao": datetime.now()},
+            "устойчивое развитие": {"traducao": "sustentabilidade", "caixa": 1, "proxima_revisao": datetime.now()},
+            "инновация": {"traducao": "inovação", "caixa": 1, "proxima_revisao": datetime.now()},
+            "демократия": {"traducao": "democracia", "caixa": 1, "proxima_revisao": datetime.now()},
+            "революция": {"traducao": "revolução", "caixa": 1, "proxima_revisao": datetime.now()}
+        }
     }
 }
 
@@ -102,9 +175,12 @@ cor_botao_atual = VERDE
 fundo_jogo = BRANCO  
 fogos = []
 nivel_atual = ""
+idioma_atual = "inglês"  # Adicionado para controlar o idioma atual
 palavras_usadas = []
 english_word = ""
 atual_correto = ""
+palavras_erradas = []
+palavras_por_nivel = {}
 
 # Classe para partículas de fogos de artifício
 class Particula:
@@ -126,6 +202,240 @@ class Particula:
     
     def draw(self, tela):
         pygame.draw.circle(tela, self.cor, (int(self.x), int(self.y)), int(self.raio))
+
+class ZTypeGame:
+    def __init__(self, palavras_erradas):
+        self.palavras_erradas = palavras_erradas
+        self.words_to_practice = [word["palavra"] for word in palavras_erradas]
+        self.total_words = len(self.words_to_practice)
+        
+        # Configurações do jogo
+        self.player_speed = 5
+        self.bullet_speed = 7
+        self.enemy_speed_min = 0.5  # Velocidade reduzida
+        self.enemy_speed_max = 1.5   # Velocidade reduzida
+        self.star_speed_min = 0.1    # Velocidade reduzida
+        self.star_speed_max = 0.3    # Velocidade reduzida
+        
+        # Estado do jogo
+        self.player = {
+            "x": WIDTH // 2,
+            "y": HEIGHT - 50,
+            "bullets": [],
+            "health": 3,
+            "score": 0
+        }
+        
+        self.enemies = []
+        self.stars = []
+        self.game_over = False
+        self.victory = False
+        
+        # Inicializa estrelas de fundo
+        for _ in range(50):
+            self.stars.append([
+                random.randint(0, WIDTH),
+                random.randint(0, HEIGHT),
+                random.uniform(self.star_speed_min, self.star_speed_max)
+            ])
+    
+    def run(self):
+        clock = pygame.time.Clock()
+        enemy_spawn_timer = 0
+        
+        while not self.game_over and not self.victory:
+            # Eventos
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        return self.player["score"]
+                    
+                    if event.key == pygame.K_SPACE:
+                        self.player["bullets"].append([self.player["x"], self.player["y"] - 20])
+                    
+                    if event.unicode.isalpha():
+                        for enemy in self.enemies:
+                            if enemy["current_letter"] < len(enemy["letters"]):
+                                if event.unicode.lower() == enemy["letters"][enemy["current_letter"]].lower():
+                                    enemy["typed"] += enemy["letters"][enemy["current_letter"]]
+                                    enemy["current_letter"] += 1
+                                    
+                                    if enemy["current_letter"] >= len(enemy["letters"]):
+                                        self.player["score"] += 10 * len(enemy["word"])
+                                        self.enemies.remove(enemy)
+                                        break
+            
+            # Atualização do estado
+            self.update_player()
+            self.update_bullets()
+            self.update_enemies(enemy_spawn_timer)
+            self.update_stars()
+            
+            # Verifica condições de término
+            if len(self.words_to_practice) == 0 and len(self.enemies) == 0:
+                self.victory = True
+            elif self.player["health"] <= 0:
+                self.game_over = True
+            
+            # Desenho
+            self.draw()
+            
+            pygame.display.flip()
+            clock.tick(60)
+            enemy_spawn_timer += 1
+        
+        # Mostra tela final
+        self.show_end_screen()
+        return self.player["score"]
+    
+    def update_player(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and self.player["x"] > 30:
+            self.player["x"] -= self.player_speed
+        if keys[pygame.K_RIGHT] and self.player["x"] < WIDTH - 30:
+            self.player["x"] += self.player_speed
+    
+    def update_bullets(self):
+        for bullet in self.player["bullets"][:]:
+            bullet[1] -= self.bullet_speed
+            if bullet[1] < 0:
+                self.player["bullets"].remove(bullet)
+    
+    def update_enemies(self, timer):
+        # Spawn de inimigos mais lento
+        if timer >= 90 and self.words_to_practice:  # A cada ~1.5 segundos
+            word = random.choice(self.words_to_practice)
+            self.words_to_practice.remove(word)
+            
+            self.enemies.append({
+                "word": word,
+                "x": random.randint(50, WIDTH - 50),
+                "y": random.randint(-100, -40),
+                "speed": random.uniform(self.enemy_speed_min, self.enemy_speed_max),
+                "typed": "",
+                "letters": list(word),
+                "current_letter": 0
+            })
+            
+            if not self.words_to_practice:
+                self.words_to_practice = [w["palavra"] for w in self.palavras_erradas 
+                                        if w["palavra"] not in [e["word"] for e in self.enemies]]
+        
+        # Atualiza posição dos inimigos e verifica colisões
+        player_rect = pygame.Rect(self.player["x"] - 15, self.player["y"] - 20, 30, 30)
+        
+        for enemy in self.enemies[:]:
+            enemy["y"] += enemy["speed"]
+            
+            # Verifica se saiu da tela
+            if enemy["y"] > HEIGHT + 20:
+                self.player["health"] -= 1
+                self.enemies.remove(enemy)
+                continue
+                
+            # Verifica colisão com jogador
+            enemy_rect = pygame.Rect(enemy["x"] - 15, enemy["y"] - 10, 30, 30)
+            if player_rect.colliderect(enemy_rect):
+                self.player["health"] -= 1
+                self.enemies.remove(enemy)
+                continue
+                
+            # Verifica colisão com balas
+            for bullet in self.player["bullets"][:]:
+                if (enemy["x"] - 15 < bullet[0] < enemy["x"] + 15 and 
+                    enemy["y"] - 10 < bullet[1] < enemy["y"] + 20):
+                    self.player["bullets"].remove(bullet)
+                    enemy["letters"] = enemy["letters"][1:]
+                    if not enemy["letters"]:
+                        self.player["score"] += 10 * len(enemy["word"])
+                        self.enemies.remove(enemy)
+                    break
+    
+    def update_stars(self):
+        for i, star in enumerate(self.stars):
+            self.stars[i][1] += star[2]
+            if star[1] > HEIGHT:
+                self.stars[i] = [random.randint(0, WIDTH), 0, 
+                                random.uniform(self.star_speed_min, self.star_speed_max)]
+    
+    def draw(self):
+        tela.fill(PRETO)
+        
+        # Desenha estrelas de fundo
+        for star in self.stars:
+            pygame.draw.circle(tela, BRANCO, (int(star[0]), int(star[1])), 1)
+        
+        # Desenha jogador
+        pygame.draw.polygon(tela, BRANCO, [
+            (self.player["x"], self.player["y"] - 20),
+            (self.player["x"] - 15, self.player["y"] + 10),
+            (self.player["x"] + 15, self.player["y"] + 10)
+        ])
+        
+        # Desenha balas
+        for bullet in self.player["bullets"]:
+            pygame.draw.rect(tela, VERDE, (bullet[0], bullet[1], 3, 10))
+        
+        # Desenha inimigos
+        for enemy in self.enemies:
+            pygame.draw.polygon(tela, VERMELHO, [
+                (enemy["x"], enemy["y"] + 20),
+                (enemy["x"] - 15, enemy["y"] - 10),
+                (enemy["x"] + 15, enemy["y"] - 10)
+            ])
+            
+            word_text = FONTE.render(enemy["word"], True, BRANCO)
+            tela.blit(word_text, (enemy["x"] - word_text.get_width() // 2, enemy["y"] - 30))
+            
+            if enemy["typed"]:
+                typed_text = FONTE.render(enemy["typed"], True, VERDE)
+                tela.blit(typed_text, (enemy["x"] - typed_text.get_width() // 2, enemy["y"] - 50))
+        
+        # UI
+        health_text = FONTE.render(f"Vidas: {self.player['health']}", True, BRANCO)
+        tela.blit(health_text, (20, 20))
+        
+        score_text = FONTE.render(f"Pontos: {self.player['score']}", True, BRANCO)
+        tela.blit(score_text, (20, 60))
+        
+        words_text = FONTE.render(f"Palavras: {self.total_words - len(self.words_to_practice)}/{self.total_words}", 
+                                 True, BRANCO)
+        tela.blit(words_text, (20, 100))
+    
+    def show_end_screen(self):
+        clock = pygame.time.Clock()
+        waiting = True
+        
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
+                        waiting = False
+            
+            tela.fill(PRETO)
+            
+            if self.game_over:
+                text = FONTE_PRINCIPAL.render("GAME OVER", True, VERMELHO)
+            else:
+                text = FONTE_PRINCIPAL.render("VITÓRIA!", True, VERDE)
+            
+            tela.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2 - 50))
+            
+            score_text = FONTE.render(f"Pontuação final: {self.player['score']}", True, BRANCO)
+            tela.blit(score_text, (WIDTH//2 - score_text.get_width()//2, HEIGHT//2 + 20))
+            
+            continue_text = FONTE.render("Pressione ENTER para voltar", True, BRANCO)
+            tela.blit(continue_text, (WIDTH//2 - continue_text.get_width()//2, HEIGHT//2 + 80))
+            
+            pygame.display.flip()
+            clock.tick(60)
 
 # Função para criar fogos de artifício
 def criar_fogos(x, y):
@@ -192,14 +502,14 @@ def desenhar_barra_progresso():
     pygame.draw.rect(tela, PRETO, (barra_x, barra_y, barra_width, barra_height), 2, border_radius=10)
     
     # Texto de progresso (acima da barra)
-    texto_progresso = FONTE.render(f"Questão: {pontuacao}/10", True, PRETO)
+    texto_progresso = FONTE.render(f"Questão: {pontuacao}/10", True, BRANCO)
     tela.blit(texto_progresso, (barra_x + (barra_width - texto_progresso.get_width()) // 2, barra_y - 30))
 
     # Caixa Leitner (centralizada abaixo da barra de progresso)
     caixas = {1:0, 2:0, 3:0, 4:0, 5:0}
-    for nivel in palavras:
-        for palavra in palavras[nivel]:
-            caixas[palavras[nivel][palavra]["caixa"]] += 1
+    for nivel in palavras[idioma_atual]:
+        for palavra in palavras[idioma_atual][nivel]:
+            caixas[palavras[idioma_atual][nivel][palavra]["caixa"]] += 1
     
     caixa_width = 300  # Largura igual à barra de progresso
     caixa_height = 80
@@ -254,48 +564,127 @@ def atualizar_caixa(palavra, nivel, acertou):
     """Atualiza a caixa da palavra baseado no desempenho"""
     if acertou:
         # Move para uma caixa superior (revisão menos frequente)
-        palavras[nivel][palavra]["caixa"] = min(palavras[nivel][palavra]["caixa"] + 1, 5)
+        palavras[idioma_atual][nivel][palavra]["caixa"] = min(palavras[idioma_atual][nivel][palavra]["caixa"] + 1, 5)
     else:
         # Retorna para a caixa 1 (revisão mais frequente)
-        palavras[nivel][palavra]["caixa"] = 1
+        palavras[idioma_atual][nivel][palavra]["caixa"] = 1
     
     # Define quando a palavra deve aparecer novamente
     intervalos = {1: 1, 2: 3, 3: 7, 4: 14, 5: 30}  # dias até próxima revisão
-    palavras[nivel][palavra]["proxima_revisao"] = datetime.now() + timedelta(days=intervalos[palavras[nivel][palavra]["caixa"]])
+    palavras[idioma_atual][nivel][palavra]["proxima_revisao"] = datetime.now() + timedelta(days=intervalos[palavras[idioma_atual][nivel][palavra]["caixa"]])
 
 # Seleciona a próxima palavra baseado no sistema Leitner
-def obter_proxima_palavra():
+def obter_proxima_palavra(nivel):
+    global palavras_por_nivel
+    
+    # Inicializa o dicionário se for a primeira vez
+    if nivel not in palavras_por_nivel:
+        palavras_por_nivel[nivel] = {
+            "todas": list(palavras[idioma_atual][nivel].keys()),
+            "usadas": []
+        }
+    
     agora = datetime.now()
     
-    # 1. Palavras que estão atrasadas para revisão
-    atrasadas = [p for p in palavras if palavras[p]["proxima_revisao"] <= agora]
+    # 1. Prioridade para palavras da caixa 1
+    caixa1 = [p for p in palavras[idioma_atual][nivel] 
+             if palavras[idioma_atual][nivel][p]["caixa"] == 1 and
+             p not in palavras_por_nivel[nivel]["usadas"]]
     
-    # 2. Se não houver atrasadas, pegue as da caixa 1
-    if not atrasadas:
-        atrasadas = [p for p in palavras if palavras[p]["caixa"] == 1]
+    # 2. Palavras atrasadas para revisão
+    atrasadas = [p for p in palavras[idioma_atual][nivel] 
+                if palavras[idioma_atual][nivel][p]["proxima_revisao"] <= agora and
+                p not in palavras_por_nivel[nivel]["usadas"] and
+                p not in caixa1]
     
-    # 3. Se ainda não houver, pegue qualquer palavra
-    if not atrasadas:
-        atrasadas = list(palavras.keys())
+    # 3. Palavras de outras caixas
+    outras = [p for p in palavras[idioma_atual][nivel] 
+             if p not in palavras_por_nivel[nivel]["usadas"] and
+             p not in caixa1 and
+             p not in atrasadas]
     
-    return random.choice(atrasadas)
+    # 4. Se todas as palavras já foram usadas, reinicie
+    if not caixa1 and not atrasadas and not outras:
+        palavras_por_nivel[nivel]["usadas"] = []
+        return obter_proxima_palavra(nivel)
+    
+    # Seleção priorizando caixa 1, depois atrasadas, depois outras
+    if caixa1:
+        palavra = random.choice(caixa1)
+    elif atrasadas:
+        palavra = random.choice(atrasadas)
+    else:
+        palavra = random.choice(outras)
+    
+    palavras_por_nivel[nivel]["usadas"].append(palavra)
+    return palavra
 
 # Função para verificar a resposta
-def verificar_resposta(resposta_selecionada, palavra_ingles, resposta_correta, nivel):
-    global pontuacao, alternativas
+def verificar_resposta(resposta_selecionada, palavra_estrangeira, resposta_correta, nivel):
+    global pontuacao, alternativas, palavras_erradas
     
     if resposta_selecionada == resposta_correta:
-        atualizar_caixa(palavra_ingles, nivel, True)
+        atualizar_caixa(palavra_estrangeira, nivel, True)
         pontuacao += 1
         tela_resposta_correta()
     else:
-        atualizar_caixa(palavra_ingles, nivel, False)
+        atualizar_caixa(palavra_estrangeira, nivel, False)
+        # Verifica se a palavra já está na lista de erros
+        palavra_ja_errada = False
+        for erro in palavras_erradas:
+            if erro["palavra"] == palavra_estrangeira:
+                palavra_ja_errada = True
+                break
+        
+        # Adiciona apenas se for a primeira vez que errou esta palavra
+        if not palavra_ja_errada:
+            erro = {
+                "palavra": palavra_estrangeira,
+                "traducao": resposta_correta,
+                "resposta_errada": resposta_selecionada
+            }
+            palavras_erradas.append(erro)
+        
         tela_resposta_errada(resposta_correta)
     
     alternativas = []  # Limpa as alternativas para que uma nova palavra seja selecionada
 
+# Função para criar a tela de seleção de idioma
+def tela_selecao_idioma():
+    esperando = True
+    clock = pygame.time.Clock()
+    
+    while esperando:
+        tela.fill(BRANCO)
+        
+        if imagem_inicio:
+            tela.blit(imagem_inicio, (0, 0))
+        
+        # Título
+        exibir_texto_com_fundo("Selecione o Idioma", FONTE_PRINCIPAL, PRETO, BRANCO, WIDTH // 2, HEIGHT // 4)
+        
+        # Botões de idioma
+        botao_ingles = exibir_botao("Inglês", WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50, VERDE, (100, 200, 100))
+        botao_russo = exibir_botao("Russo", WIDTH // 2 - 100, HEIGHT // 2 + 20, 200, 50, AZUL, (100, 100, 200))
+
+        pygame.display.update()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                pos_mouse = pygame.mouse.get_pos()
+                if botao_ingles.collidepoint(pos_mouse):
+                    return "inglês"
+                elif botao_russo.collidepoint(pos_mouse):
+                    return "russo"
+        
+        clock.tick(30)
+
 # Função para criar a tela inicial
 def tela_inicial():
+    global idioma_atual
     esperando = True
     clock = pygame.time.Clock()
     
@@ -320,7 +709,7 @@ def tela_inicial():
         if imagem_inicio:
             tela.blit(imagem_inicio, (0, 0))
         
-        # Caixa de explicação (tamanho ajustado)
+        # Caixa de explicação
         caixa_width = 350
         caixa_height = 180
         caixa_x = 50
@@ -337,7 +726,7 @@ def tela_inicial():
             texto_y = caixa_y + 30 + i * 30  # Espaçamento vertical
             tela.blit(texto, (texto_x, texto_y))
         
-        # Botões de nível (mantidos como antes)
+        # Botões de nível 
         botao_iniciante = exibir_botao("Iniciante", WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50, VERDE, (100, 200, 100))
         botao_intermediario = exibir_botao("Intermediário", WIDTH // 2 - 100, HEIGHT // 2 + 20, 200, 50, AZUL, (100, 100, 200))
         botao_avancado = exibir_botao("Avançado", WIDTH // 2 - 100, HEIGHT // 2 + 90, 200, 50, VERMELHO, (200, 100, 100))
@@ -358,65 +747,32 @@ def tela_inicial():
                     return "avancado"
         
         clock.tick(30)
-        
-# Função para obter próxima palavra adaptada para o nível
-def obter_proxima_palavra(nivel):
-    global palavras_usadas, english_word, atual_correto
-    
-    agora = datetime.now()
-    palavras_disponiveis = [p for p in palavras[nivel] 
-                           if p not in palavras_usadas and 
-                           palavras[nivel][p]["proxima_revisao"] <= agora]
-    
-    if not palavras_disponiveis:
-        palavras_disponiveis = [p for p in palavras[nivel] if p not in palavras_usadas]
-    
-    if not palavras_disponiveis:
-        # Todas as palavras foram usadas, reinicia
-        palavras_usadas = []
-        palavras_disponiveis = list(palavras[nivel].keys())
-    
-    english_word = random.choice(palavras_disponiveis)
-    atual_correto = palavras[nivel][english_word]["traducao"]
-    palavras_usadas.append(english_word)
-    
-    return english_word
 
 # Tela de parabéns
 def tela_parabens(nivel):
-    global fogos, trofeu_img
+    global fogos, trofeu_img, palavras_erradas
     
     fogos = []
     clock = pygame.time.Clock()
     
-    # Criar fogos de artifício para celebração
+    # Criar fogos de artifício
     for _ in range(15):
         criar_fogos(random.randint(100, WIDTH-100), random.randint(100, HEIGHT//2))
     
-    # Configurar fonte estilo conquista
-    try:
-        fonte_parabens = pygame.font.Font("PressStart2P-Regular.ttf", 24)
-        fonte_nivel = pygame.font.Font("PressStart2P-Regular.ttf", 36)
-    except:
-        fonte_parabens = pygame.font.SysFont("Arial", 24, bold=True)
-        fonte_nivel = pygame.font.SysFont("Arial", 36, bold=True)
+    # Configurar fontes
+    fonte_titulo = pygame.font.Font(None, 48)
+    fonte_subtitulo = pygame.font.Font(None, 36)
+    fonte_botao = pygame.font.Font(None, 32)
+    fonte_palavras = pygame.font.Font(None, 24)
     
-    # Textos da conquista
-    nivel_texto = nivel.upper() + "!"
-    texto_conquista = fonte_parabens.render("CONQUISTA DESBLOQUEADA!", True, AMARELO)
-    texto_nivel = fonte_nivel.render(nivel_texto, True, LARANJA)
-    
-    # Posicionamento lado a lado (troféu + texto)
-    if trofeu_img:
-        # Centraliza o conjunto troféu + texto
-        conjunto_width = trofeu_img.get_width() + 20 + max(texto_conquista.get_width(), texto_nivel.get_width())
-        inicio_x = WIDTH // 2 - conjunto_width // 2
-        
-        trofeu_x = inicio_x
-        trofeu_y = HEIGHT // 2 - trofeu_img.get_height() // 2
-        
-        texto_x = trofeu_x + trofeu_img.get_width() + 20
-        texto_y = HEIGHT // 2 - texto_nivel.get_height() // 2
+    # Posições dos elementos
+    centro_x = WIDTH // 2
+    titulo_y = 150
+    subtitulo_y = 220
+    trofeu_y = 300
+    palavras_y = 450
+    botao_ztype_y = HEIGHT - 180  # Posição mais acima
+    botao_continuar_y = HEIGHT - 100  # Posição mais abaixo
     
     waiting = True
     while waiting:
@@ -430,45 +786,82 @@ def tela_parabens(nivel):
         if random.random() < 0.15:
             criar_fogos(random.randint(100, WIDTH-100), random.randint(100, HEIGHT//2))
         
-        # Desenha o troféu e textos lado a lado
+        # Título e subtítulo
+        titulo = fonte_titulo.render("Nível Concluído!", True, AZUL_ESCURO)
+        tela.blit(titulo, (centro_x - titulo.get_width() // 2, titulo_y))
+        
+        subtitulo = fonte_subtitulo.render(f"Dificuldade: {nivel.capitalize()}", True, VERDE)
+        tela.blit(subtitulo, (centro_x - subtitulo.get_width() // 2, subtitulo_y))
+        
+        # Troféu centralizado
         if trofeu_img:
-            tela.blit(trofeu_img, (trofeu_x, trofeu_y))
+            tela.blit(trofeu_img, (centro_x - trofeu_img.get_width() // 2, trofeu_y))
         
-            # Texto de conquista
-            tela.blit(texto_conquista, (texto_x, texto_y - 30))
+        # Lista de palavras erradas (se houver)
+        if palavras_erradas:
+            titulo_palavras = fonte_palavras.render("Palavras para praticar:", True, VERMELHO)
+            tela.blit(titulo_palavras, (centro_x - titulo_palavras.get_width() // 2, palavras_y))
             
-            # Texto do nível com efeito de brilho
-            pygame.draw.rect(tela, (50, 50, 50), (texto_x - 5, texto_y + 25, texto_nivel.get_width() + 10, texto_nivel.get_height() + 10), border_radius=5)
-            tela.blit(texto_nivel, (texto_x, texto_y + 30))
+            for i, erro in enumerate(palavras_erradas[:5]):  # Mostra até 5 palavras
+                texto = fonte_palavras.render(
+                    f"{erro['palavra']} = {erro['traducao']} (você respondeu: {erro['resposta_errada']})", 
+                    True, PRETO
+                )
+                tela.blit(texto, (centro_x - texto.get_width() // 2, palavras_y + 30 + i * 30))
         
-        # Botão de continuar
-        botao_rect = exibir_botao("Continuar", WIDTH // 2 - 100, HEIGHT - 150, 200, 50, VERDE, (100, 255, 100))
+        # Botões separados
+        if palavras_erradas:
+            botao_ztype = exibir_botao("Praticar no ZType", centro_x - 200, botao_ztype_y, 400, 50, 
+                                      AZUL, (100, 100, 255))
         
+        botao_continuar = exibir_botao("Continuar", centro_x - 100, botao_continuar_y, 200, 50, 
+                                      VERDE, (100, 255, 100))
+
         pygame.display.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    return 
+                if event.key == pygame.K_SPACE and palavras_erradas:
+                    ztype = ZTypeGame(palavras_erradas)
+                    ztype.run()
+                    palavras_erradas = []  # Limpa após praticar
+                    return
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if botao_rect.collidepoint(event.pos):
+                if palavras_erradas and 'botao_ztype' in locals() and botao_ztype.collidepoint(event.pos):
+                    ztype = ZTypeGame(palavras_erradas)
+                    ztype.run()
+                    palavras_erradas = []  # Limpa após praticar
+                    return
+                if 'botao_continuar' in locals() and botao_continuar.collidepoint(event.pos):
                     return
         
         clock.tick(30)
 
 # Função para reiniciar o jogo
 def recomeçar_jogo():
-    global pontuacao, alternativas, fogos
+    global pontuacao, alternativas, fogos, palavras_erradas, palavras_por_nivel
     pontuacao = 0
     alternativas = []
     fogos = []
+    palavras_erradas = []
+    palavras_por_nivel = {}  # Limpa o registro de palavras usadas por nível
     main()
 
 # Função principal do jogo
 def main():    
-    global pontuacao, alternativas, cor_botao_atual, fogos, nivel_atual, palavras_usadas
+    global pontuacao, alternativas, cor_botao_atual, fogos, nivel_atual, palavras_usadas, english_word, atual_correto, idioma_atual
     
+    # Primeiro seleciona o idioma
+    idioma_atual = tela_selecao_idioma()
+    
+    # Depois seleciona o nível
     nivel_atual = tela_inicial()
+    
     clock = pygame.time.Clock()
     running = True
     palavras_usadas = []
@@ -478,18 +871,24 @@ def main():
             tela_parabens(nivel_atual)
             recomeçar_jogo()
             return
-
-        tela.fill(fundo_jogo)
+        
+        # Preencher fundo
+        if fundo_perguntas:
+            tela.blit(fundo_perguntas, (0, 0))
+        else:
+            # Gradiente azul claro como fallback
+            tela.fill((230, 243, 255))  # Cor hexadecimal #E6F3FF
+            pygame.draw.rect(tela, (255, 255, 255), (50, 50, WIDTH-100, HEIGHT-100), border_radius=20)
 
         # Obter próxima palavra do nível atual
         if not alternativas:
             english_word = obter_proxima_palavra(nivel_atual)
-            atual_correto = palavras[nivel_atual][english_word]["traducao"]
+            atual_correto = palavras[idioma_atual][nivel_atual][english_word]["traducao"]
             
             # Prepara as alternativas
             alternativas = [atual_correto]
             while len(alternativas) < 4:
-                palavra_aleatoria = random.choice([p["traducao"] for p in palavras[nivel_atual].values()])
+                palavra_aleatoria = random.choice([p["traducao"] for p in palavras[idioma_atual][nivel_atual].values()])
                 if palavra_aleatoria not in alternativas:
                     alternativas.append(palavra_aleatoria)
             random.shuffle(alternativas)
